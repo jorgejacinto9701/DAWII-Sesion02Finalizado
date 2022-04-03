@@ -1,5 +1,6 @@
 package com.empresa.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,77 +29,92 @@ public class AlumnoController {
 
 	@GetMapping
 	@ResponseBody
-	public ResponseEntity<List<Alumno>> listaAlumno(){
+	public ResponseEntity<List<Alumno>> listaAlumno() {
 		List<Alumno> lista = service.listaAlumno();
 		return ResponseEntity.ok(lista);
 	}
 
 	@PostMapping
 	@ResponseBody
-	public ResponseEntity<Alumno> insertaAlumno(@RequestBody Alumno obj){
-		if (obj == null) {
-			return ResponseEntity.badRequest().build();	
-		}else {
-			obj.setIdAlumno(0);
-			Alumno objSalida = service.insertaActualizaAlumno(obj);
-			return ResponseEntity.ok(objSalida);
+	public ResponseEntity<HashMap<String, Object>> insertaAlumno(@RequestBody Alumno obj) {
+		HashMap<String, Object> salida = new HashMap<String, Object>();
+		try {
+			List<Alumno> lstAlumnos = service.listaAlumnoPorDni(obj.getDni());
+			if (CollectionUtils.isEmpty(lstAlumnos)) {
+				obj.setIdAlumno(0);
+				Alumno objSalida = service.insertaActualizaAlumno(obj);
+				if (objSalida == null) {
+					salida.put("mensaje", "Error en el registro ");
+				}else {
+					salida.put("mensaje", "Registro exitoso");
+				}
+			}else {
+				salida.put("mensaje", "El DNI ya existe : " + obj.getDni());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			salida.put("mensaje", "Error en el registro " + e.getMessage());
 		}
+		
+		return ResponseEntity.ok(salida);
 	}
+
 	
 	@PutMapping
 	@ResponseBody
-	public ResponseEntity<Alumno> actualizaAlumno(@RequestBody Alumno obj){
-		if (obj == null) {
-			return ResponseEntity.badRequest().build();	
-		}else {
-			Optional<Alumno> optAlumno = service.buscarPorId(obj.getIdAlumno());
-			if (optAlumno.isPresent()) {
-				Alumno objSalida =  service.insertaActualizaAlumno(obj);
-				return ResponseEntity.ok(objSalida);
+	public ResponseEntity<HashMap<String, Object>> actualizaAlumno(@RequestBody Alumno obj) {
+		HashMap<String, Object> salida = new HashMap<String, Object>();
+		try {
+			Optional<Alumno> optional =  service.listaAlumnoPorId(obj.getIdAlumno());
+			if (optional.isPresent()) {
+				List<Alumno> lstAlumno = service.listaAlumnoPorDniDiferenteDelMismo(obj.getDni(), obj.getIdAlumno());
+				if (CollectionUtils.isEmpty(lstAlumno)) {
+					Alumno objSalida = service.insertaActualizaAlumno(obj);
+					if (objSalida == null) {
+						salida.put("mensaje", "Error en actualizar ");
+					}else {
+						salida.put("mensaje", "Actualización exitosa");
+					}
+				}else {
+					salida.put("mensaje", "El DNI ya existe : " + obj.getDni());
+				}
 			}else {
-				return ResponseEntity.badRequest().build();
+				salida.put("mensaje", "El ID no existe : " + obj.getIdAlumno());
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			salida.put("mensaje", "Error en la actualización " + e.getMessage());
 		}
-	}
-	
-	@DeleteMapping("/{paramId}")
-	@ResponseBody
-	public ResponseEntity<Alumno> eliminaAlumno(@PathVariable("paramId") int idAlumno){
-		Optional<Alumno> optAlumno = service.buscarPorId(idAlumno);
-		if (optAlumno.isPresent()) {
-			service.eliminaPorId(idAlumno);
-			Optional<Alumno> optSalida = service.buscarPorId(idAlumno);
-			if (optSalida.isPresent()) {
-				return ResponseEntity.badRequest().build();
-			}else {
-				return ResponseEntity.ok(optAlumno.get());
-			}
-		}else {
-			return ResponseEntity.badRequest().build();
-		}
-	}
-	
-	@GetMapping("/id/{paramId}")
-	@ResponseBody
-	public ResponseEntity<Alumno> buscaPorId(@PathVariable("paramId") int idAlumno){
-		Optional<Alumno> optAlumno = service.buscarPorId(idAlumno);
-		if (optAlumno.isPresent()) {
-			return ResponseEntity.ok(optAlumno.get());
-		}else {
-			return ResponseEntity.badRequest().build();
-		}
-	}
-
-	@GetMapping("/dni/{paramDni}")
-	@ResponseBody
-	public ResponseEntity<List<Alumno>> buscaPorDni(@PathVariable("paramDni") String dni){
-		List<Alumno> lista = service.listaPorDni(dni);
-		if (CollectionUtils.isEmpty(lista)) {
-			return ResponseEntity.badRequest().build();
-		}else {
-			return ResponseEntity.ok(lista);
-		}
+		return ResponseEntity.ok(salida);
 	}
 
 	
+	@DeleteMapping("/{id}")
+	@ResponseBody
+	public ResponseEntity<HashMap<String, Object>> eliminaAlumno(@PathVariable int id) {
+		HashMap<String, Object> salida = new HashMap<String, Object>();
+		try {
+			Optional<Alumno> optional =  service.listaAlumnoPorId(id);
+			if (optional.isPresent()) {
+				service.eliminaPorId(id);
+				salida.put("mensaje", "Eliminación exitosa");
+			}else {
+				salida.put("mensaje", "El ID no existe : " + id);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			salida.put("mensaje", "Error en la eliminación " + e.getMessage());
+		}
+		return ResponseEntity.ok(salida);
+	}
+	
+	@GetMapping("/dni/{dni}")
+	@ResponseBody
+	public ResponseEntity<List<Alumno>> listaAlumnoPorDni(@PathVariable String dni) {
+		List<Alumno> lista = service.listaAlumnoPorDni(dni);
+		return ResponseEntity.ok(lista);
+	}
 }
+
+
+

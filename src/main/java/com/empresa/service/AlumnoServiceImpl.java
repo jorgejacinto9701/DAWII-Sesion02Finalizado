@@ -10,36 +10,34 @@ import com.empresa.entity.Alumno;
 import com.empresa.repository.AlumnoRepository;
 
 @Service
-public class AlumnoServiceImpl implements AlumnoService{
+public class AlumnoServiceImpl implements AlumnoService {
 
 	@Autowired
 	private AlumnoRepository repository;
-	
 
 	@Override
 	public List<Alumno> listaAlumno() {
 		return repository.findAll();
 	}
-
 	@Override
 	public Alumno insertaActualizaAlumno(Alumno obj) {
 		return repository.save(obj);
 	}
-
 	@Override
-	public Optional<Alumno> buscarPorId(int idAlumno) {
+	public List<Alumno> listaAlumnoPorDni(String dni) {
+		return repository.listaPorDni(dni);
+	}
+	@Override
+	public List<Alumno> listaAlumnoPorDniDiferenteDelMismo(String dni, int idAlumno) {
+		return repository.listaPorDniDiferenteSiMismo(dni, idAlumno);
+	}
+	@Override
+	public Optional<Alumno> listaAlumnoPorId(int idAlumno) {
 		return repository.findById(idAlumno);
 	}
-
 	@Override
 	public void eliminaPorId(int idAlumno) {
 		repository.deleteById(idAlumno);
 	}
-
-	@Override
-	public List<Alumno> listaPorDni(String dni) {
-		return repository.findByDni(dni);
-	}
-
-
+	
 }
